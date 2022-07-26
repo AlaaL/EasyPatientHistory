@@ -29,17 +29,38 @@
         </button>
       </li>
       <li>
-        <button class="p-link layout-topbar-button">
+        <button class="p-link layout-topbar-button" label="Toggle" @click="profileToggle" aria-haspopup="true" aria-controls="overlay_menu">
           <i class="pi pi-user" />
           <span>Profile</span>
         </button>
+        <Menu id="overlay_menu" ref="menu" :model="items" :popup="true" />
       </li>
     </ul>
   </div>
 </template>
 
 <script lang="ts">
+import { useAuthStore } from '~/stores/auth.store'
+import Toast from 'primevue/toast';
+
 export default {
+  data() {
+    return {
+      items: [
+        {
+          label: 'Profile',
+          icon: 'pi pi-user-edit',
+          command: () => {
+              this.$toast.add({severity:'success', summary:'Updated', detail:'Data Updated', life: 3000});
+          }
+        },
+        {
+          label: 'Logout',
+          icon: 'pi pi-power-off',
+          command: this.logout
+        }
+      ]}
+  },
   emits: ['topbar-menu-toggle', 'menu-toggle'],
   computed: {
     darkTheme () {
@@ -55,6 +76,14 @@ export default {
     },
     topbarImage () {
       return this.$appState.darkTheme ? '/images/logo-white.svg' : '/images/logo-dark.svg'
+    },
+    profileToggle(event) {
+      this.$refs.menu.toggle(event);
+    },
+    logout() {
+      const authStore = useAuthStore();
+      authStore.logout();
+      navigateTo('/account/login');
     }
   }
 }

@@ -2,32 +2,37 @@
 /* eslint-disable indent */
 import { defineStore } from 'pinia';
 
-const baseUrl = `${import.meta.env.VITE_API_URL}/users`;
+const baseUrl = `${import.meta.env.VITE_API_URL}`;
 
 export const useAuthStore = defineStore({
     id: 'auth',
     state: () => ({
-        // initialize state from local storage to enable user to stay logged in
         user: JSON.parse(localStorage.getItem('user')),
-        returnUrl: null
     }),
     actions: {
         async login(username, password) {
-            const user = null; //await fetchWrapper.post(`${baseUrl}/authenticate`, { username, password });
+
+            const data = {
+                email: username,
+                password: password
+            };
+            const u = await $fetch(`${baseUrl}/api/login`, {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
 
             // update pinia state
-            this.user = user;
-
+            this.user = u;
+            console.log(u);
             // store user details and jwt in local storage to keep user logged in between page refreshes
-            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('user', JSON.stringify(u));
 
-            // redirect to previous url or default to home page
-            this.$nuxt.redirect(this.returnUrl || '/');
+            navigateTo('/');
         },
         logout() {
             this.user = null;
             localStorage.removeItem('user');
-            this.$nuxt.redirect('/account/login');
+            navigateTo('/account/login');
         }
     }
 });
