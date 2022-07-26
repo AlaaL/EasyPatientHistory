@@ -1,11 +1,11 @@
 <script setup>
-
-
 </script>
 
 <script>
 import { email, required } from "@vuelidate/validators";
 import { useVuelidate } from "@vuelidate/core";
+
+const baseUrl = `${import.meta.env.VITE_API_URL}`;
 
 definePageMeta({
   layout: "empty",
@@ -27,12 +27,12 @@ export default {
         gender: 'Male',
         address: '',
         phone: '',
-        role: {name: 'Patient', id: 2},
+        role: {name: 'Patient', id: 4},
       },
       submitted: false,
       roles: [
-        {name: 'Doctor', id: 1},
-        {name: 'Patient', id: 2},
+        {name: 'Doctor', id: 2},
+        {name: 'Patient', id: 4},
 		  ],
     };
   },
@@ -77,6 +77,13 @@ export default {
       if (!isFormCorrect) {
         return;
       }
+      console.log(this.userInfo);
+      let r =  await $fetch(`${baseUrl}/api/register`, {
+          method: 'POST',
+          body: {...this.userInfo, role_id:this.userInfo.role.id}
+      });
+      console.log(r);
+      navigateTo('/account/login');
     },
   },
 };

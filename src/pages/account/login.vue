@@ -1,18 +1,45 @@
 <script setup>
-definePageMeta({
-  layout: 'empty'
-})
+
+  onBeforeMount(() => {
+
+  });
+
+  definePageMeta({
+    layout: 'empty',
+  });
+
 </script>
 
 <script>
+
+import { useAuthStore } from '~/stores/auth.store'
+
 export default {
   data() {
     return {
+      baseUrl: `${import.meta.env.VITE_API_URL}`,
+      email: '',
+      passowrd: '',
+      errorMessage: null
     }
   },
   methods: {
+    async handleSubmit() {
+      const authStore = useAuthStore();
+      authStore.login( this.email, this.password)
+        .catch(error => this.loginErrorHandler(error));
 
-  },
+    },
+      loginErrorHandler(error) {
+        let stringError = new String(error);
+        if (stringError.includes('401 Unauthorized'))
+          this.errorMessage = 'Invalid username or password';
+        else
+          this.errorMessage = stringError;
+        console.log(error);
+
+      }
+    },
 };
 </script>
 
@@ -73,21 +100,24 @@ export default {
               </NuxtLink>
             </span>
           </div>
-          <div class="w-full md:w-10 mx-auto" data-v-05c8386e="">
-            <label
-              for="email1"
-              class="block text-900 text-xl font-medium mb-2"
-              data-v-05c8386e=""
-            >Email</label>
-            <InputText type="text" placeholder="Email" class="w-full mb-3 w-full mb-3" />
-            <label
-              for="password1"
-              class="block text-900 font-medium text-xl mb-2"
-              data-v-05c8386e=""
-            >Password</label>
-            <Password v-model="value" class="w-full mb-3" input-class="w-full" :feedback="false" />
-            <Button label="Sign In" class="w-full" />
-          </div>
+          <form @submit.prevent="handleSubmit()">
+            <div class="w-full md:w-10 mx-auto" data-v-05c8386e="">
+              <label
+                for="email1"
+                class="block text-900 text-xl font-medium mb-2"
+                data-v-05c8386e=""
+              >Email</label>
+              <InputText type="text" placeholder="Email" class="w-full mb-3 w-full mb-3" v-model="email" />
+              <label
+                for="password1"
+                class="block text-900 font-medium text-xl mb-2"
+                data-v-05c8386e=""
+              >Password</label>
+              <Password class="w-full mb-3" input-class="w-full" :feedback="false" v-model="password" />
+              <div v-if="errorMessage" class="p-error" style="margin-bottom:15px;">{{errorMessage}}</div>
+              <Button type="submit" label="Sign In" class="w-full" />
+            </div>
+          </form>
         </div>
       </div>
     </div>
