@@ -83,7 +83,6 @@ import Tree from 'primevue/tree'
 import TreeSelect from 'primevue/treeselect'
 import TreeTable from 'primevue/treetable'
 import TriStateCheckbox from 'primevue/tristatecheckbox'
-
 import CodeHighlight from '~/directives/code'
 import BlockViewer from '~/components/common/BlockViewer.vue'
 

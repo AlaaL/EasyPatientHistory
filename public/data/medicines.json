@@ -1,0 +1,49 @@
+{
+	"data": [
+		{
+			"id": "1",
+			"name": "الأسبرين",
+			"caliber":"500",
+			"type":"type medicine",
+			"manufactureCompany":"company medicine",
+			"composition":"C Medicine ",
+			"description": "Medicine Description Description"
+		},
+		{
+			"id": "2",
+			"name": "باراسيتامول",
+			"caliber":"500",
+			"type":"type medicine",
+			"manufactureCompany":"company medicine",
+			"composition":"C Medicine ",
+			"description": "Medicine Description Description"
+		},
+		{
+			"id": "3",
+			"name": "أوميبرازول",
+			"caliber":"1000",
+			"type":"type medicine",
+			"manufactureCompany":"company medicine",
+			"composition":"C Medicine ",
+			"description": "Medicine Description Description"
+		},
+		{
+			"id": "4",
+			"name": "رانيتيدين",
+			"caliber":"250",
+			"type":"type medicine",
+			"manufactureCompany":"company medicine",
+			"composition":"C Medicine ",
+			"description": "Medicine Description"
+		},
+		{
+			"id": "5",
+			"name": "سيتالوبرام",
+			"caliber":"1000",
+			"type":"type medicine",
+			"manufactureCompany":"company medicine",
+			"composition":"C Medicine ",
+			"description": "Medicine Description"
+		}
+	]
+}
