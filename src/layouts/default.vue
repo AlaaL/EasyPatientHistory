@@ -2,7 +2,7 @@
   <div :class="containerClass" @click="onWrapperClick">
     <AppTopBar @menu-toggle="onMenuToggle" />
     <div class="layout-sidebar" @click="onSidebarClick">
-      <AppMenu :model="menu" @menuitem-click="onMenuItemClick" />
+      <AppMenu :model="getUserMenu()" @menuitem-click="onMenuItemClick" />
     </div>
 
     <div class="layout-main-container">
@@ -24,6 +24,7 @@ import AppTopBar from '~/components/layouts/default/AppTopbar.vue'
 import AppMenu from '~/components/layouts/default/AppMenu.vue'
 import AppConfig from '~/components/layouts/default/AppConfig.vue'
 import AppFooter from '~/components/layouts/default/AppFooter.vue'
+import { useAuthStore } from '~/stores/auth.store'
 
 export default {
   components: {
@@ -38,6 +39,18 @@ export default {
       staticMenuInactive: false,
       overlayMenuActive: false,
       mobileMenuActive: false,
+      adminMenu: [{items:[
+        { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', to: '/demo/formlayout' },
+      ]}],
+      doctorMenu:[{ items:[
+        { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', to: '/demo/formlayout' },
+      ]}],
+      receiptionMenu: [{items:[
+        { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', to: '/demo/formlayout' },
+      ]}],
+      patientMenu: [{items:[
+        { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', to: '/demo/formlayout' },
+      ]}],
       menu: [
         {
           label: 'Home',
@@ -226,6 +239,20 @@ export default {
       }
 
       return true
+    },
+    getUserMenu() {
+      let user = useAuthStore().user.user;
+
+      if (user.role_id == 1)
+        return this.adminMenu;
+      else if (user.role_id == 2)
+        return this.doctorMenu;
+      else if (user.role_id == 3)
+        return this.receiptionMenu;
+      else if (user.role_id == 4)
+        return this.patientMenu;
+
+        return [];
     }
   }
 }

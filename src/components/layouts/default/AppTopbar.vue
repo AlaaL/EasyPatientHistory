@@ -1,8 +1,8 @@
 <template>
   <div class="layout-topbar">
     <NuxtLink to="/" class="layout-topbar-logo">
-      <img alt="Logo" :src="topbarImage()">
-      <span>SAKAI</span>
+      <img alt="Logo" src="~/assets/logo.png">
+      <span>Easy Patient History</span>
     </NuxtLink>
     <button class="p-link layout-menu-button layout-topbar-button" @click="onMenuToggle">
       <i class="pi pi-bars" />
@@ -16,18 +16,9 @@
       <i class="pi pi-ellipsis-v" />
     </button>
     <ul class="layout-topbar-menu hidden lg:flex origin-top">
-      <li>
-        <button class="p-link layout-topbar-button">
-          <i class="pi pi-calendar" />
-          <span>Events</span>
-        </button>
-      </li>
-      <li>
-        <button class="p-link layout-topbar-button">
-          <i class="pi pi-cog" />
-          <span>Settings</span>
-        </button>
-      </li>
+      <div style="display:flex; align-items: center">
+        <span>Welcome {{getUserName()}}</span>
+      </div>
       <li>
         <button class="p-link layout-topbar-button" label="Toggle" @click="profileToggle" aria-haspopup="true" aria-controls="overlay_menu">
           <i class="pi pi-user" />
@@ -50,9 +41,7 @@ export default {
         {
           label: 'Profile',
           icon: 'pi pi-user-edit',
-          command: () => {
-              this.$toast.add({severity:'success', summary:'Updated', detail:'Data Updated', life: 3000});
-          }
+          command: this.openProfile
         },
         {
           label: 'Logout',
@@ -84,6 +73,31 @@ export default {
       const authStore = useAuthStore();
       authStore.logout();
       navigateTo('/account/login');
+    },
+    getUserName() {
+      let user = useAuthStore().user.user;
+      let roleName = "";
+
+      if (user.role_id == 1)
+        roleName = "Admin";
+      else if (user.role_id == 2)
+        roleName = "Doctor";
+      else if (user.role_id == 3)
+        roleName = "Reception";
+      else if (user.role_id == 4)
+        roleName = "Patient";
+
+      return roleName + " " + user.name;
+    },
+    openProfile() {
+      let user = useAuthStore().user.user;
+
+      if (user.role_id == 2)
+        navigateTo('/doctor/doctorProfile')
+      else if (user.role_id == 3)
+        navigateTo('/reception/receptionProfile')
+      else if (user.role_id == 4)
+        navigateTo('/patient/patientProfile')
     }
   }
 }
