@@ -3,7 +3,9 @@ import { FilterMatchMode } from 'primevue/api'
 import AppointmentService from '../../../services/AppointmentService'
 import PatientService from '../../../services/PatientService'
 import { useAuthStore } from '~/stores/auth.store'
+
 const baseUrl = `${import.meta.env.VITE_API_URL}`
+
 export default {
   data() {
     return {
@@ -27,6 +29,7 @@ export default {
     this.appointmentService = new AppointmentService()
     this.patientService = new PatientService()
     $fetch(`${baseUrl}/api/profileById/${useAuthStore().user.user.id}`).then((r) => {
+      console.log('rererererer', r);
       if (r.receptionist) {
         this.receptionId = r.receptionist.recep_id
       }
@@ -49,31 +52,32 @@ export default {
       this.submitted = false
     },
     async saveAppointment () {
+      console.log('asdasd a');
       this.submitted = true
       if (this.appointment.time) {
         if (this.appointment.appoint_id) {
           this.appointment.time = this.appointment.time.value ? this.appointment.time.value : this.appointment.time
           this.appointment.pat_id = this.appointment.pat_id.value ? this.appointment.pat_id.value : this.appointment.pat_id
-          this.appointments[this.findIndexById(this.appointment.appoint_id)] = this.appointment
+
           await $fetch(`http://127.0.0.1:8000/api/Appointments/${this.appointment.appoint_id}`, {
             method: 'PUT',
             body: JSON.stringify({
               time: this.appointment.time,
               description: this.appointment.description,
-              pat_id: this.selectedPatient.patient_id,
+              pat_id: this.appointment.pat_id,
               recep_id: this.receptionId
             })
           })
           this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'Appointment Updated', life: 3000 })
         } else {
           this.appointment.appoint_id = this.createId()
-          this.appointments.push(this.appointment)
+          //this.appointments.push(this.appointment)
           await $fetch('http://127.0.0.1:8000/api/Appointments', {
             method: 'POST',
             body: JSON.stringify({
               time: this.appointment.time,
               description: this.appointment.description,
-              pat_id: this.selectedPatient.patient_id,
+              pat_id: this.appointment.pat_id,
               recep_id: this.receptionId
             }),
           })
@@ -199,7 +203,7 @@ export default {
           style="min-width: 16rem"
         />
         <Column
-          field="patientName"
+          field="patient.name"
           header="Patient Name"
           :sortable="true"
           style="min-width: 10rem"
@@ -252,27 +256,16 @@ export default {
       <div class="field col-12">
         <Dropdown
           id="patient"
-          v-model="selectedPatient"
+          v-model="appointment.pat_id"
           :options="patients"
           option-label="name"
+          option-value="patient_id"
           placeholder="Select Patient "
           :class="{ 'p-invalid': submitted && !appointment.pat_id }"
         >
-          <template #value="slotProps">
-            <div v-if="slotProps.value">
-              <span>{{ slotProps.value.name }}</span>
-            </div>
-            <span v-else>
-              {{ slotProps.placeholder }}
-            </span>
-          </template>
-          <template #option="slotProps">
-            <div>
-              <div>{{ slotProps.option.name }}</div>
-            </div>
-          </template>
+
         </Dropdown>
-        <small v-if="submitted && !appointment.pat_id" class="p-error">Patient  is required.</small>
+        <small v-if="submitted && !appointment.pat_id" class="p-error">Patient is required.</small>
       </div>
       <div class="field">
         <label for="description">Description</label>
