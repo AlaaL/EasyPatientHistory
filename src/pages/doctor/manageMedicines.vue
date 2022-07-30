@@ -1,5 +1,7 @@
-<script>
-import MedicineService from '../../../services/MedicineService';
+/* eslint-disable indent */
+<script lang="ts">
+import MedicineService from '../../../services/MedicineService'
+import { FilterMatchMode } from 'primevue/api'
 export default {
   data () {
     return {
@@ -10,21 +12,23 @@ export default {
       medicine: {},
       selectedMedicines: null,
       filters: {},
-      submitted: false
+      submitted: false,
     }
   },
   medicineService: null,
   created() {
     this.medicineService = new MedicineService()
+    this.initFilters()
   },
   mounted() {
     this.medicineService.getMedicines().then(data => this.medicines = data)
+    console.log(this.medicines)
   },
   methods: {
     openNew() {
       this.medicine = {}
       this.submitted = false
-      this.medicineDialog= true
+      this.medicineDialog = true
     },
     hideDialog() {
       this.medicineDialog = false
@@ -33,22 +37,40 @@ export default {
     saveMedicine() {
       this.submitted = true
 
-      if (this.medicine.name.trim())
-      {
-        if (this.medicine.id) {
-          this.medicine.caliber = this.medicine.caliber.value ? this.medicine.caliber.value : this.medicine.caliber;
-          this.medicine.type = this.medicine.type.value ? this.medicine.type.value : this.medicine.type;
-          this.medicine.manufactureCompany = this.medicine.manufactureCompany.value ? this.medicine.manufactureCompany.value : this.medicine.manufactureCompany;
-          this.medicine.composition = this.medicine.composition.value ? this.medicine.composition.value : this.medicine.composition;
-          this.medicines[this.findIndexById(this.medicine.id)] = this.medicine
+      if (this.medicine.name.trim()) {
+        if (this.medicine.medic_id) {
+          this.medicine.caliber = this.medicine.caliber.value ? this.medicine.caliber.value : this.medicine.caliber
+          this.medicine.type = this.medicine.type.value ? this.medicine.type.value : this.medicine.type
+          this.medicine.manufactureCompany = this.medicine.manufactureCompany.value ? this.medicine.manufactureCompany.value : this.medicine.manufactureCompany
+          this.medicine.composition = this.medicine.composition.value ? this.medicine.composition.value : this.medicine.composition
+          this.medicines[this.findIndexById(this.medicine.medic_id)] = this.medicine
           this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'medicine Updated', life: 3000 })
+          $fetch(`http://127.0.0.1:8000/api/Medicines/${this.medicine.medic_id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              name: this.medicine.name,
+              caliber: this.medicine.caliber,
+              type: this.medicine.type,
+              manufactureCompany: this.medicine.manufactureCompany,
+              composition: this.medicine.composition,
+            }),
+          })
         }
-        else {
-          this.medicine.id = this.createId()
+ else {
+          this.medicine.medic_id = this.createId()
           this.medicines.push(this.medicine)
           this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'medicine Created', life: 3000 })
+          $fetch('http://127.0.0.1:8000/api/Medicines', {
+            method: 'POST',
+            body: JSON.stringify({
+              name: this.medicine.name,
+              caliber: this.medicine.caliber,
+              type: this.medicine.type,
+              manufactureCompany: this.medicine.manufactureCompany,
+              composition: this.medicine.composition,
+            }),
+          })
         }
-
         this.medicineDialog = false
         this.medicine = {}
       }
@@ -62,7 +84,10 @@ export default {
       this.deleteMedicineDialog = true
     },
     deleteMedicine() {
-      this.medicines = this.medicines.filter(val => val.id !== this.medicine.id)
+      this.medicines = this.medicines.filter(val => val.medic_id !== this.medicine.medic_id)
+      $fetch(`http://127.0.0.1:8000/api/Medicines/${this.medicine.medic_id}`, {
+        method: 'DELETE'
+      })
       this.deleteMedicineDialog = false
       this.medicine = {}
       this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'Medicine Deleted', life: 3000 })
@@ -70,7 +95,7 @@ export default {
     findIndexById(id) {
       let index = -1
       for (let i = 0; i < this.medicines.length; i++) {
-        if (this.medicines[i].id === id) {
+        if (this.medicines[i].medic_id === id) {
           index = i
           break
         }
@@ -95,6 +120,11 @@ export default {
       this.selectedMedicines = null
       this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'Medicines Deleted', life: 3000 })
     },
+    initFilters () {
+      this.filters = {
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+      }
+    },
   },
 }
 </script>
@@ -102,6 +132,7 @@ export default {
 <template>
   <div>
     <div class="card">
+      <Toast />
       <Toolbar class="mb-4">
         <template #start>
           <Button
@@ -124,9 +155,10 @@ export default {
         ref="dt"
         v-model:selection="selectedMedicines"
         :value="medicines"
-        data-key="id"
+        data-key="medic_id"
         :paginator="true"
         :rows="10"
+        :filters="filters"
         paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
         :rows-per-page-options="[5, 10, 25]"
         current-page-report-template="Showing {first} to {last} of {totalRecords} Medicines"
@@ -141,7 +173,7 @@ export default {
             </h5>
             <span class="p-input-icon-left">
               <i class="pi pi-search" />
-              <InputText  placeholder="Search..."/>
+              <InputText v-model="filters['global'].value" placeholder="Search..." />
             </span>
           </div>
         </template>
@@ -182,7 +214,6 @@ export default {
           style="min-width: 16rem"
         />
 
-
         <Column :exportable="false" style="min-width: 8rem">
           <template #body="slotProps">
             <Button
@@ -209,23 +240,23 @@ export default {
     >
       <div class="field">
         <label for="name">Name</label>
-        <InputText id="name" v-model.trim="medicine.name" required="true" autofocus :class="{'p-invalid': submitted && !medicine.name}" />
-        <small class="p-error" v-if="submitted && !medicine.name">Name is required.</small>
+        <InputText id="name" v-model.trim="medicine.name" required="true" autofocus :class="{ 'p-invalid': submitted && !medicine.name }" />
+        <small v-if="submitted && !medicine.name" class="p-error">Name is required.</small>
       </div>
       <div class="field">
         <label for="caliber">Caliber</label>
-        <InputText id="caliber" v-model.trim="medicine.caliber" required="true" autofocus :class="{'p-invalid': submitted && !medicine.caliber}" />
-        <small class="p-error" v-if="submitted && !medicine.caliber">Caliber is required.</small>
+        <InputText id="caliber" v-model.trim="medicine.caliber" required="true" autofocus :class="{ 'p-invalid': submitted && !medicine.caliber }" />
+        <small v-if="submitted && !medicine.caliber" class="p-error">Caliber is required.</small>
       </div>
       <div class="field">
         <label for="type">Type</label>
-        <InputText id="type" v-model.trim="medicine.type" required="true" autofocus :class="{'p-invalid': submitted && !medicine.type}" />
-        <small class="p-error" v-if="submitted && !medicine.type">Type is required.</small>
+        <InputText id="type" v-model.trim="medicine.type" required="true" autofocus :class="{ 'p-invalid': submitted && !medicine.type }" />
+        <small v-if="submitted && !medicine.type" class="p-error">Type is required.</small>
       </div>
       <div class="field">
         <label for="manufactureCompany">Manufacture Company</label>
-        <InputText id="manufactureCompany" v-model.trim="medicine.manufactureCompany" required="true" autofocus :class="{'p-invalid': submitted && !medicine.manufactureCompany}" />
-        <small class="p-error" v-if="submitted && !medicine.manufactureCompany">Company is required.</small>
+        <InputText id="manufactureCompany" v-model.trim="medicine.manufactureCompany" required="true" autofocus :class="{ 'p-invalid': submitted && !medicine.manufactureCompany }" />
+        <small v-if="submitted && !medicine.manufactureCompany" class="p-error">Company is required.</small>
       </div>
       <div class="field">
         <label for="composition">Composition</label>
@@ -260,7 +291,7 @@ export default {
     >
       <div class="confirmation-content">
         <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
-        <span v-if="medicine">Are you sure you want to delete <b>{{medicine.name}}</b>?</span>
+        <span v-if="medicine">Are you sure you want to delete <b>{{ medicine.name }}</b>?</span>
       </div>
       <template #footer>
         <Button

@@ -1,75 +1,110 @@
-<script>
-import AppointmentService from '../../../services/AppointmentService';
+<script lang="ts">
+import { FilterMatchMode } from 'primevue/api'
+import AppointmentService from '../../../services/AppointmentService'
+import PatientService from '../../../services/PatientService'
+import { useAuthStore } from '~/stores/auth.store'
+const baseUrl = `${import.meta.env.VITE_API_URL}`
 export default {
-  data () {
+  data() {
     return {
       appointments: null,
+      patients: null,
       appointmentDialog: false,
       deleteAppointmentDialog: false,
       deleteAppointmentsDialog: false,
       appointment: {},
       selectedAppointments: null,
+      selectedPatient: null,
       filters: {},
-      submitted: false
+      submitted: false,
+      receptionId:-1
+
     }
   },
   appointmentService: null,
-  created() {
+  patientService: null,
+  created () {
     this.appointmentService = new AppointmentService()
+    this.patientService = new PatientService()
+    $fetch(`${baseUrl}/api/profileById/${useAuthStore().user.user.id}`).then((r) => {
+      if (r.receptionist) {
+        this.receptionId = r.receptionist.recep_id
+      }
+    })
+    this.initFilters()
   },
-  mounted() {
+  mounted () {
     this.appointmentService.getAppointments().then(data => this.appointments = data)
+    this.patientService.getPatients().then(data => this.patients = data)
   },
   methods: {
-    openNew() {
+
+    openNew () {
       this.appointment = {}
       this.submitted = false
-      this.appointmentDialog= true
+      this.appointmentDialog = true
     },
-    hideDialog() {
+    hideDialog () {
       this.appointmentDialog = false
       this.submitted = false
     },
-    saveAppointment() {
+    async saveAppointment () {
       this.submitted = true
-
-      if (this.appointment.time.trim())
-      {
-        if (this.appointment.id) {
-          this.appointment.time = this.appointment.time.value ? this.appointment.time.value : this.appointment.time;
-          this.appointment.doctorName = this.appointment.doctorName.value ? this.appointment.doctorName.value : this.appointment.doctorName;
-          this.appointment.patientName = this.appointment.patientName.value ? this.appointment.patientName.value : this.medicine.patientName;
-          this.appointments[this.findIndexById(this.appointment.id)] = this.appointment
+      if (this.appointment.time) {
+        if (this.appointment.appoint_id) {
+          this.appointment.time = this.appointment.time.value ? this.appointment.time.value : this.appointment.time
+          this.appointment.pat_id = this.appointment.pat_id.value ? this.appointment.pat_id.value : this.appointment.pat_id
+          this.appointments[this.findIndexById(this.appointment.appoint_id)] = this.appointment
+          await $fetch(`http://127.0.0.1:8000/api/Appointments/${this.appointment.appoint_id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              time: this.appointment.time,
+              description: this.appointment.description,
+              pat_id: this.selectedPatient.patient_id,
+              recep_id: this.receptionId
+            })
+          })
           this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'Appointment Updated', life: 3000 })
+        } else {
+          this.appointment.appoint_id = this.createId()
+          this.appointments.push(this.appointment)
+          await $fetch('http://127.0.0.1:8000/api/Appointments', {
+            method: 'POST',
+            body: JSON.stringify({
+              time: this.appointment.time,
+              description: this.appointment.description,
+              pat_id: this.selectedPatient.patient_id,
+              recep_id: this.receptionId
+            }),
+          })
         }
-        else {
-          this.appointment.id = this.createId()
-          this.appointments.push(this.medicine)
-          this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'Appointment Created', life: 3000 })
-        }
-
+        this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'Appointment Created', life: 3000 });
+        this.appointmentService.getAppointments().then(data => this.appointments = data);
         this.appointmentDialog = false
         this.appointment = {}
       }
     },
-    editAppointment(appointment) {
+    editAppointment (appointment) {
       this.appointment = { ...appointment }
       this.appointmentDialog = true
     },
-    confirmDeleteAppointment(appointment) {
+    confirmDeleteAppointment (appointment) {
       this.appointment = appointment
       this.deleteAppointmentDialog = true
     },
-    deleteAppointment() {
-      this.appointments = this.appointments.filter(val => val.id !== this.appointment.id)
+    deleteAppointment () {
+      this.appointments = this.appointments.filter(val => val.appoint_id !== this.appointment.appoint_id)
+      $fetch(`http://127.0.0.1:8000/api/Appointments/${this.appointment.appoint_id}`, {
+        method: 'DELETE'
+      })
       this.deleteAppointmentDialog = false
       this.appointment = {}
       this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'Appointment Deleted', life: 3000 })
     },
-    findIndexById(id) {
+    findIndexById (id) {
       let index = -1
       for (let i = 0; i < this.appointments.length; i++) {
-        if (this.appointmentss[i].id === id) {
+        if (this.appointments[i].appoint_id === id) {
           index = i
           break
         }
@@ -77,7 +112,7 @@ export default {
 
       return index
     },
-    createId() {
+    createId () {
       let id = ''
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
       for (let i = 0; i < 5; i++) {
@@ -85,22 +120,28 @@ export default {
       }
       return id
     },
-    confirmDeleteSelected() {
+    confirmDeleteSelected () {
       this.deleteAppointmentssDialog = true
     },
-    deleteSelectedAppointmentss() {
-      this.appointments = this.appointments.filter(val => !this.selectedAppointmentss.includes(val))
+    deleteSelectedAppointmentss () {
+      this.appointments = this.appointments.filter(val => !this.selectedAppointments.includes(val))
       this.deleteAppointmentsDialog = false
       this.selectedAppointments = null
-      this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'Medicines Deleted', life: 3000 })
+      this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'Appointments Deleted', life: 3000 })
     },
-  },
+    initFilters() {
+      this.filters = {
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      }
+    }
+  }
 }
 </script>
 
 <template>
   <div>
     <div class="card">
+      <Toast />
       <Toolbar class="mb-4">
         <template #start>
           <Button
@@ -122,10 +163,11 @@ export default {
       <DataTable
         ref="dt"
         v-model:selection="selectedAppointments"
-        :value="medicines"
-        data-key="id"
+        :value="appointments"
+        data-key="appoint_id"
         :paginator="true"
         :rows="10"
+        :filters="filters"
         paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
         :rows-per-page-options="[5, 10, 25]"
         current-page-report-template="Showing {first} to {last} of {totalRecords} Appointments"
@@ -140,7 +182,7 @@ export default {
             </h5>
             <span class="p-input-icon-left">
               <i class="pi pi-search" />
-              <InputText  placeholder="Search..."/>
+              <InputText v-model="filters.global.value" placeholder="Search..." />
             </span>
           </div>
         </template>
@@ -163,8 +205,8 @@ export default {
           style="min-width: 10rem"
         />
         <Column
-          field="doctorName"
-          header="Doctor Name"
+          field="description"
+          header="Description"
           :sortable="true"
           style="min-width: 10rem"
         />
@@ -194,22 +236,47 @@ export default {
     >
       <div class="field">
         <label for="time">Time</label>
-        <InputText id="time" v-model.trim="appointment.time" required="true" autofocus :class="{'p-invalid': submitted && !appointment.time}" />
-        <small class="p-error" v-if="submitted && !appointment.time">time is required.</small>
+        <Calendar
+          id="time"
+          v-model="appointment.time"
+          required="true"
+          :show-time="true"
+          :showSeconds="true"
+          :hour-format="12"
+          date-format="dd-mm-yy"
+          :class="{ 'p-invalid': submitted && !appointment.time }"
+        />
+        <small v-if="submitted && !appointment.time" class="p-error">time is required.</small>
+      </div>
+
+      <div class="field col-12">
+        <Dropdown
+          id="patient"
+          v-model="selectedPatient"
+          :options="patients"
+          option-label="name"
+          placeholder="Select Patient "
+          :class="{ 'p-invalid': submitted && !appointment.pat_id }"
+        >
+          <template #value="slotProps">
+            <div v-if="slotProps.value">
+              <span>{{ slotProps.value.name }}</span>
+            </div>
+            <span v-else>
+              {{ slotProps.placeholder }}
+            </span>
+          </template>
+          <template #option="slotProps">
+            <div>
+              <div>{{ slotProps.option.name }}</div>
+            </div>
+          </template>
+        </Dropdown>
+        <small v-if="submitted && !appointment.pat_id" class="p-error">Patient  is required.</small>
       </div>
       <div class="field">
-        <label for="doctorName">Doctor Name</label>
-        <InputText id="doctorName" v-model.trim="appointment.doctorName" required="true" autofocus :class="{'p-invalid': submitted && !appointment.doctorName}" />
-        <small class="p-error" v-if="submitted && !appointment.doctorName">doctor Name is required.</small>
-      </div>
-      <div class="field">
-        <label for="patientName">Patient Name</label>
-        <InputText id="patientName" v-model.trim="appointment.patientName" required="true" autofocus :class="{'p-invalid': submitted && !appointment.patientName}" />
-        <small class="p-error" v-if="submitted && !appointment.patientName">Patient Name is required.</small>
-      </div>
-    <div class="field">
         <label for="description">Description</label>
-        <Textarea id="description" v-model="appointment.description" required="true" rows="3" cols="20" />
+        <Textarea id="description" v-model.trim="appointment.description" required="true" rows="3" cols="20" />
       </div>
       <template #footer>
         <Button
@@ -235,7 +302,7 @@ export default {
     >
       <div class="confirmation-content">
         <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
-        <span v-if="appointment">Are you sure you want to delete <b>{{appointment.time}}</b>?</span>
+        <span v-if="appointment">Are you sure you want to delete <b>{{ appointment.time }}</b>?</span>
       </div>
       <template #footer>
         <Button

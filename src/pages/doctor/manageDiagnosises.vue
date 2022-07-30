@@ -1,5 +1,6 @@
-<script>
+<script lang="ts">
 import DiagnosisService from '../../../services/DiagnosisService';
+import { FilterMatchMode } from 'primevue/api'
 export default {
   data () {
     return {
@@ -16,6 +17,7 @@ export default {
   diagnosisService: null,
   created() {
     this.diagnosisService = new DiagnosisService()
+    this.initFilters()
   },
   mounted() {
     this.diagnosisService.getDiagnosises().then(data => this.Diagnosises = data)
@@ -35,13 +37,27 @@ export default {
 
       if (this.diagnosis.name.trim())
       {
-        if (this.diagnosis.id) {
-          this.Diagnosises[this.findIndexById(this.diagnosis.id)] = this.diagnosis
+        if (this.diagnosis.diagn_id) {
+          this.Diagnosises[this.findIndexById(this.diagnosis.diagn_id)] = this.diagnosis
+          $fetch(`http://127.0.0.1:8000/api/Diagnsises/${this.diagnosis.diagn_id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              name: this.diagnosis.name,
+              description: this.diagnosis.description
+            })
+          })
           this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'Diagnosis Updated', life: 3000 })
         }
         else {
-          this.diagnosis.id = this.createId()
+          this.diagnosis.diagn_id = this.createId()
           this.Diagnosises.push(this.diagnosis)
+          $fetch('http://127.0.0.1:8000/api/Diagnsises', {
+            method: 'POST',
+            body: JSON.stringify({
+              name: this.diagnosis.name,
+              description: this.diagnosis.description,
+            }),
+          })
           this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'Diagnosis Created', life: 3000 })
         }
 
@@ -58,7 +74,10 @@ export default {
       this.deleteDiagnosisDialog = true
     },
     deleteDiagnosis() {
-      this.Diagnosises = this.Diagnosises.filter(val => val.id !== this.diagnosis.id)
+      this.Diagnosises = this.Diagnosises.filter(val => val.diagn_id !== this.diagnosis.diagn_id)
+      $fetch(`http://127.0.0.1:8000/api/Diagnosises/${this.diagnosis.diagn_id}`, {
+        method: 'DELETE'
+      })
       this.deleteDiagnosisDialog = false
       this.diagnosis = {}
       this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'Diagnosis Deleted', life: 3000 })
@@ -66,7 +85,7 @@ export default {
     findIndexById(id) {
       let index = -1
       for (let i = 0; i < this.Diagnosises.length; i++) {
-        if (this.Diagnosises[i].id === id) {
+        if (this.Diagnosises[i].diagn_id === id) {
           index = i
           break
         }
@@ -91,13 +110,19 @@ export default {
       this.selectedDiagnosises = null
       this.$toast.add({ severity: 'success', summary: 'Successful', detail: 'Diagnosises Deleted', life: 3000 })
     },
-  },
+    initFilters () {
+      this.filters = {
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+      }
+    },
+  }
 }
 </script>
 
 <template>
   <div>
     <div class="card">
+      <Toast />
       <Toolbar class="mb-4">
         <template #start>
           <Button
@@ -120,9 +145,10 @@ export default {
         ref="dt"
         v-model:selection="selectedDiagnosises"
         :value="Diagnosises"
-        data-key="id"
+        data-key="diagn_id"
         :paginator="true"
         :rows="10"
+        :filters="filters"
         paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
         :rows-per-page-options="[5, 10, 25]"
         current-page-report-template="Showing {first} to {last} of {totalRecords} Diagnosises"
@@ -137,7 +163,7 @@ export default {
             </h5>
             <span class="p-input-icon-left">
               <i class="pi pi-search" />
-              <InputText  placeholder="Search..."/>
+              <InputText v-model="filters['global'].value" placeholder="Search..." />
             </span>
           </div>
         </template>

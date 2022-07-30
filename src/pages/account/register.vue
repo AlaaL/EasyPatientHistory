@@ -27,12 +27,12 @@ export default {
         gender: 'Male',
         address: '',
         phone: '',
-        role: {name: 'Patient', id: 4},
+        role: {name: 'Doctor', id: 2},
       },
       submitted: false,
       roles: [
         {name: 'Doctor', id: 2},
-        {name: 'Patient', id: 4},
+        {name: 'Receptionist', id: 3},
 		  ],
     };
   },
@@ -78,11 +78,10 @@ export default {
         return;
       }
       console.log(this.userInfo);
-      let r =  await $fetch(`${baseUrl}/api/register`, {
+        await $fetch(`${baseUrl}/api/register`, {
           method: 'POST',
           body: {...this.userInfo, role_id:this.userInfo.role.id}
       });
-      console.log(r);
       navigateTo('/account/login');
     },
   },

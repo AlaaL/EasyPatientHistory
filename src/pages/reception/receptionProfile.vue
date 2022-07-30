@@ -2,7 +2,8 @@
 <script>
 import { email, required } from '@vuelidate/validators'
 import { useVuelidate } from '@vuelidate/core'
-
+import { useAuthStore } from '~/stores/auth.store'
+const baseUrl = `${import.meta.env.VITE_API_URL}`
 export default {
   setup () {
     return {
@@ -23,7 +24,17 @@ export default {
       },
       submitted: false,
       qualification:'',
+      receptionId:-1,
     };
+  },
+  created() {
+    $fetch(`${baseUrl}/api/profileById/${useAuthStore().user.user.id}`).then((r) => {
+      this.userInfo = r
+      if (r.receptionist) {
+        this.receptionId = r.receptionist.recep_id
+        this.qualification= r.receptionist.qualification
+      }
+    })
   },
   validations () {
     return {
@@ -55,6 +66,37 @@ export default {
         },
       }
     };
+  },
+methods:{
+      async handleSubmit () {
+      this.submitted = true
+
+      const isFormCorrect = await this.v$.$validate()
+
+      if (!isFormCorrect) {
+
+      }
+      if (this.receptionId != -1) {
+        $fetch(`http://127.0.0.1:8000/api/receptionists/${this.receptionId}`,
+          {
+            method: 'PUT',
+            body: JSON.stringify(
+              {
+                qualification: this.qualification
+              }),
+          })
+      } else {
+        $fetch('http://127.0.0.1:8000/api/receptionists',
+          {
+            method: 'POST',
+            body: JSON.stringify(
+              {
+                qualification: this.qualification,
+                user_id: useAuthStore().user.user.id,
+            }),
+          })
+      }
+    }
   }
 };
 </script>

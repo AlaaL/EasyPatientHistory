@@ -1,16 +1,20 @@
 /* eslint-disable @typescript-eslint/indent */
 /* eslint-disable @typescript-eslint/comma-dangle */
 <script>
-import { email, required } from '@vuelidate/validators';
-import { useVuelidate } from '@vuelidate/core';
+import { email, required } from '@vuelidate/validators'
+import { useVuelidate } from '@vuelidate/core'
+import SpecialtyService from '../../../services/SpecialtyService'
+import { useAuthStore } from '~/stores/auth.store'
+
+const baseUrl = `${import.meta.env.VITE_API_URL}`
 
 export default {
-  setup() {
+  setup () {
     return {
-      v$: useVuelidate(),
+      v$: useVuelidate()
     };
   },
-  data() {
+  data () {
     return {
       userInfo: {
         name: '',
@@ -20,77 +24,111 @@ export default {
         gender: 'Male',
         address: '',
         phone: '',
-        role: { name: 'Patient', id: 2 },
+        role: { name: 'Patient', id: 2 }
       },
       submitted: false,
-      selectSpecialty: null,
-      specialties: [
-        { specname: 'جراحة عظمية', value: 'NY' },
-        { specname: 'داخلية عصبية', value: 'RM' },
-        { specname: 'أمراض جهاز الهضم ', value: 'LDN' },
-        { specname: 'اطفال', value: 'IST' },
-        { specname: 'نسائية', value: 'PRS' },
-      ],
-      selectedClinics: null,
-      clinics: [
-        { cliname: 'المركز الطبي', value: 'NY' },
-        { cliname: 'العيادة الشاملة', value: 'RM' },
-        { cliname: 'العيادة التخصصية', value: 'LDN' },
-        { cliname: 'المركز الطبي الدولي', value: 'IST' },
-        { cliname: 'العيادة النسائية', value: 'PRS' },
-      ],
+      specialtyService: null,
+      selectedSpecialty: null,
+      specialties: null,
+      clinicName: '',
+      clinicAddress: '',
+      clinicPhone: '',
+      doctorId: -1
     };
   },
-  validations() {
+  validations () {
     return {
       userInfo: {
         name: {
-          required,
+          required
         },
         email: {
           required,
-          email,
+          email
         },
         password: {
-          required,
+          required
         },
         birthDate: {
-          required,
+          required
         },
         gender: {
-          required,
+          required
         },
         address: {
-          required,
+          required
         },
         phone: {
-          required,
+          required
         },
         role: {
-          required,
+          required
         },
-      },
+      }
     };
   },
+  created() {
+    this.specialtyService = new SpecialtyService()
+
+    $fetch(`${baseUrl}/api/profileById/${useAuthStore().user.user.id}`).then((r) => {
+      this.userInfo = r
+      if (r.doctor) {
+        this.doctorId = r.doctor.doc_id
+        this.selectedSpecialty.name = r.doctor.specialtyName
+        this.clinicName = r.doctor.clinicName
+        this.clinicAddress = r.doctor.clinicAddress
+        this.clinicPhone = r.doctor.clinicPhone
+      }
+    })
+  },
+  mounted() {
+    this.specialtyService.getSpecialties().then(data => this.specialties = data)
+  },
   methods: {
-    async handleSubmit() {
+    async handleSubmit () {
+      this.submitted = true
 
-      this.submitted = true;
-
-      const isFormCorrect = await this.v$.$validate();
+      const isFormCorrect = await this.v$.$validate()
 
       if (!isFormCorrect) {
-        return;
+
       }
-    },
-  },
-};
+      if (this.doctorId != -1) {
+        $fetch(`http://127.0.0.1:8000/api/Doctors/${this.doctorId}`,
+          {
+            method: 'PUT',
+            body: JSON.stringify(
+              {
+                description: 'description',
+                specialtyName: this.selectedSpecialty.name,
+                clinicName: this.clinicName,
+                clinicAddress: this.clinicAddress,
+                clinicPhone: this.clinicPhone
+              }),
+          })
+      } else {
+        $fetch('http://127.0.0.1:8000/api/Doctors',
+          {
+            method: 'POST',
+            body: JSON.stringify(
+              {
+                description: 'description',
+                user_id: useAuthStore().user.user.id,
+                specialtyName: this.selectedSpecialty.name,
+                clinicName: this.clinicName,
+                clinicAddress: this.clinicAddress,
+                clinicPhone: this.clinicPhone
+            }),
+          })
+      }
+    }
+}
+}
 </script>
 
 <template>
-
   <form @submit.prevent="handleSubmit()">
-    <Panel header="personal information">
+    <Panel header=" Doctor's Personal Information">
       <div class="p-fluid grid">
         <div class="field col-12">
           <span class="p-float-label">
@@ -104,8 +142,8 @@ export default {
           </span>
           <small
             v-if="
-              (v$.userInfo.name.$invalid && submitted) ||
-                v$.userInfo.name.$pending.$response
+              (v$.userInfo.name.$invalid && submitted)
+                || v$.userInfo.name.$pending.$response
             "
             class="p-error"
           >{{
@@ -124,8 +162,8 @@ export default {
           </span>
           <small
             v-if="
-              (v$.userInfo.email.$invalid && submitted) ||
-                v$.userInfo.email.$pending.$response
+              (v$.userInfo.email.$invalid && submitted)
+                || v$.userInfo.email.$pending.$response
             "
             class="p-error"
           >{{
@@ -146,14 +184,14 @@ export default {
           </span>
           <small
             v-if="
-              (v$.userInfo.birthDate.$invalid && submitted) ||
-                v$.userInfo.birthDate.$pending.$response
+              (v$.userInfo.birthDate.$invalid && submitted)
+                || v$.userInfo.birthDate.$pending.$response
             "
             class="p-error"
           >{{
             v$.userInfo.birthDate.required.$message.replace(
               "Value",
-              "BirthDate"
+              "BirthDate",
             )
           }}</small>
         </div>
@@ -208,8 +246,8 @@ export default {
           </span>
           <small
             v-if="
-              (v$.userInfo.phone.$invalid && submitted) ||
-                v$.userInfo.phone.$pending.$response
+              (v$.userInfo.phone.$invalid && submitted)
+                || v$.userInfo.phone.$pending.$response
             "
             class="p-error"
           >{{
@@ -218,24 +256,52 @@ export default {
         </div>
       </div>
     </Panel>
-    <Panel header="Specialty and clinics">
+    <Panel header="Clinic Information">
       <div class="p-fluid grid">
         <div class="field col-12">
-          <span class="p-float-label">
-            <Dropdown id= "Specialty" v-model="selectSpecialty" :options="specialties" option-label="specname" />
-            <label for="Specialty">Specialty Name</label>
-          </span>
-        </div>
-        <div class="field col-12">
-          <span class="p-float-label">
-            <MultiSelect id="clinicname" v-model="selectedClinics" :options="clinics" option-label="cliname" />
-            <label for="clinicname">Clinics Name</label>
-          </span>
+          <Dropdown
+            id="Specialty"
+            v-model="selectedSpecialty"
+            :options="specialties"
+            option-label="name"
+            :filter="true"
+            placeholder="Select Specialty "
+          >
+            <template #value="slotProps">
+              <div v-if="slotProps.value">
+                <span>{{ slotProps.value.name }}</span>
+              </div>
+              <span v-else>
+                {{ slotProps.placeholder }}
+              </span>
+            </template>
+            <template #option="slotProps">
+              <div>
+                <div>{{ slotProps.option.name }}</div>
+              </div>
+            </template>
+          </Dropdown>
+          <div class="field col-12">
+            <span class="p-float-label">
+              <InputText id="clinicName" v-model="clinicName" type="text" />
+              <label for="clinicName">Clinic Name</label>
+            </span>
+          </div>
+          <div class="field col-12">
+            <span class="p-float-label">
+              <InputText id="clinicAddress" v-model="clinicAddress" type="text" />
+              <label for="clinicAddress">Clinic Address</label>
+            </span>
+          </div>
+          <div class="field col-12">
+            <span class="p-float-label">
+              <InputText id="clinicPhone" v-model="clinicPhone" type="text" />
+              <label for="clinicPhone">Clinic Phone</label>
+            </span>
+          </div>
         </div>
       </div>
-      <div>
-        <Button type="submit" label="Save" class="w-full" />
-      </div>
-    </Panel>
+    </panel>
+    <Button type="submit" label="Save" class="w-full" />
   </form>
 </template>

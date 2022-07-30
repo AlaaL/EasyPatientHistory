@@ -43,10 +43,16 @@ export default {
         { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', to: '/demo/formlayout' },
       ]}],
       doctorMenu:[{ items:[
-        { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', to: '/demo/formlayout' },
+        { label: 'Show Appointments', icon: 'pi pi-fw pi-id-card', to: '/doctor/showAppointment' },
+        { label: 'Manage Diagnosises', icon: 'pi pi-fw pi-id-card', to: '/doctor/manageDiagnosises' },
+        { label: 'Manage Medicines', icon: 'pi pi-fw pi-id-card', to: '/doctor/manageMedicines' },
+        { label: 'Update Patient File ', icon: 'pi pi-fw pi-id-card', to: '/doctor/updatePatientFile' },
+         { label: 'Docror Profile', icon: 'pi pi-fw pi-id-card', to: '/doctor/doctorProfile' },
       ]}],
       receiptionMenu: [{items:[
-        { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', to: '/demo/formlayout' },
+        { label: 'Add New Patient File', icon: 'pi pi-fw pi-id-card', to: '/reception/addPatient' },
+        { label: 'Manage Appointments', icon: 'pi pi-fw pi-id-card', to: '/reception/manageAppointments' },
+        { label: 'Reception Profile', icon: 'pi pi-fw pi-id-card', to: '/reception/receptionProfile' },
       ]}],
       patientMenu: [{items:[
         { label: 'Form Layout', icon: 'pi pi-fw pi-id-card', to: '/demo/formlayout' },

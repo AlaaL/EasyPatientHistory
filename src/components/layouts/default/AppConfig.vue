@@ -1,8 +1,5 @@
 <template>
   <div id="layout-config" :class="containerClass">
-    <a id="layout-config-button" href="#" class="layout-config-button" @click="toggleConfigurator">
-      <i class="pi pi-cog" />
-    </a>
     <Button class="p-button-danger layout-config-close p-button-rounded p-button-text" icon="pi pi-times" :style="{'z-index': 1}" @click="hideConfigurator" />
 
     <div class="layout-config-content">
